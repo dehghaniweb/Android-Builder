@@ -1,0 +1,116 @@
+name: Android Builder
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: "Project name"
+        required: true
+        type: string
+        default: "MyApp"
+
+      zip_name:
+        description: "ZIP file name"
+        required: true
+        type: string
+        default: "MyApp.zip"
+
+      version_code:
+        description: "Version code"
+        required: true
+        type: string
+        default: "1"
+
+jobs:
+  build:
+    name: Build Android App
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show build information
+        run: |
+          echo "=========================================="
+          echo "ANDROID BUILDER"
+          echo "=========================================="
+          echo "Project     : ${{ inputs.project_name }}"
+          echo "ZIP         : ${{ inputs.zip_name }}"
+          echo "VersionCode : ${{ inputs.version_code }}"
+          echo "=========================================="
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android Build Tools
+        run: |
+          sdkmanager "platform-tools"
+          sdkmanager "platforms;android-35"
+          sdkmanager "build-tools;35.0.0"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Prepare workspace
+        run: |
+          mkdir -p build_input
+          mkdir -p build_output
+
+      - name: Check project ZIP
+        run: |
+          if [ ! -f "${{ inputs.zip_name }}" ]; then
+            echo "ERROR: ZIP file not found:"
+            echo "${{ inputs.zip_name }}"
+            exit 1
+          fi
+
+          echo "ZIP found:"
+          ls -lh "${{ inputs.zip_name }}"
+
+      - name: Extract project
+        run: |
+          rm -rf build_input/*
+          unzip -q "${{ inputs.zip_name }}" -d build_input
+
+          echo "Extracted project:"
+          find build_input -maxdepth 3 -type f | head -100
+
+      - name: Build preparation
+        run: |
+          echo "Cloud Android build environment is ready."
+          echo "Java:"
+          java -version
+          echo
+          echo "Gradle:"
+          gradle --version
+          echo
+          echo "Android SDK:"
+          echo "$ANDROID_HOME"
+
+      - name: Build
+        run: |
+          echo "BUILD ENGINE WILL BE CONNECTED IN NEXT STEP."
+
+      - name: Create test artifact
+        run: |
+          echo "Android Builder cloud environment OK." > build_output/build-status.txt
+          echo "Project: ${{ inputs.project_name }}" >> build_output/build-status.txt
+          echo "Version Code: ${{ inputs.version_code }}" >> build_output/build-status.txt
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Android-Builder-${{ inputs.project_name }}
+          path: build_output/
+          if-no-files-found: warn

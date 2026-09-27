@@ -1,0 +1,24 @@
+project:
+  name: MyApp
+  versionCode: 1
+  versionName: "1"
+
+build:
+  debug: true
+  release: true
+  apk: true
+  aab: true
+
+output:
+  debug_apk: true
+  signed_apk: true
+  signed_aab: true
+  keystore: true
+  build_log: true
+
+telegram:
+  send_debug_apk: true
+  send_signed_apk: true
+  send_signed_aab: true
+  send_keystore: false
+  send_build_log: true
